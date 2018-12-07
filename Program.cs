@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Gzipper.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -17,26 +18,29 @@ namespace Gzipper
         private static string targetFile = "D://temp/CLR_RE.pdf";
         static void Main(string[] args)
         {
+            // var parameters = FetchParams(args);
+            var parameters = new Parameters();
+            parameters.Input = "D://temp/CLR.pdf";
+            parameters.Output = "D://temp/CLR.gz";
+            parameters.Mode = Mode.Compress;
 
-            //var file = new FileInfo(directoryPath);
-            // создание сжатого файла
-            Compress(sourceFile, compressedFile);
-            Decompress(compressedFile, targetFile);
+            Compress(parameters.Input, parameters.Output, parameters.Mode);
+            //Decompress(compressedFile, targetFile);
 
             Console.ReadLine();
+
         }
 
-        private static void Compress(string sourceFile, string compressedFile)
+        private static void Compress(string inputFile, string outputFile, Mode mode)
         {
-            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.OpenOrCreate))
+            using (FileStream sourceStream = new FileStream(inputFile, FileMode.Open))
             {
-                using (FileStream targetStream = File.Create(compressedFile))
+                using (FileStream targetStream = new FileStream(outputFile, FileMode.Create))
                 {
                     using (GZipStream compressionStream = new GZipStream(targetStream, CompressionMode.Compress))
                     {
                         sourceStream.CopyTo(compressionStream);
-                        Console.WriteLine("Сжатие файла {0} завершено. Исходный размер: {1}  сжатый размер: {2}.",
-                            sourceFile, sourceStream.Length.ToString(), targetStream.Length.ToString());
+                        Console.WriteLine($"Сжатие файла {inputFile} завершено. Исходный размер: {sourceStream.Length}  сжатый размер: {targetStream.Length}.");
                     }
                 }
             }
@@ -65,6 +69,28 @@ namespace Gzipper
             while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
             {
                 output.Write(buffer, 0, bytesRead);
+            }
+        }
+
+        private static Parameters FetchParams(string[] args)
+        {
+            try
+            {
+                if (args.Length != 3)
+                    throw new Exception(Properties.Resources.ErrorCountParameters);
+                var mode = Enum.Parse(typeof(Mode), args[0]);
+
+                return new Parameters
+                {
+                    Mode = (Mode)mode,
+                    Input = !string.IsNullOrEmpty(args[1]) ? args[1] : string.Empty,
+                    Output = !string.IsNullOrEmpty(args[2]) ? args[2] : string.Empty,
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception {ex.InnerException} {ex.Message}");
+                throw new Exception(Properties.Resources.ErrorValidationParameters);
             }
         }
     }
